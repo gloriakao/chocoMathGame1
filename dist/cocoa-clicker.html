@@ -16,8 +16,7 @@
 class CocoaScene extends Phaser.Scene{
   constructor(){super('CocoaWorkshop');this.score=0;this.seconds=15;this.active=false;this.targetIndex=0;this.beans=[];this.types=[{name:'黑可可',base:0x4c2119,shine:0xb76d42,chip:0xe6ad72},{name:'牛奶可可',base:0x875033,shine:0xd49a5c,chip:0xf1d19a},{name:'草莓可可',base:0x9e4f62,shine:0xe9939d,chip:0xffd2cd}]}
   create(){
-    this.cameras.main.setBackgroundColor('#fff9ee')
-    this.width=this.scale.width;this.height=this.scale.height
+    this.cameras.main.setBackgroundColor('#fff9ee');this.width=this.scale.width;this.height=this.scale.height
     this.add.rectangle(this.width/2,44,this.width,88,0x633c2e)
     this.add.text(22,27,'🍫 可可工坊',{fontFamily:'system-ui, sans-serif',fontSize:'20px',fontStyle:'bold',color:'#fff3d5'}).setOrigin(0,0.5)
     this.scoreText=this.add.text(this.width-22,27,'得分  0',{fontFamily:'system-ui, sans-serif',fontSize:'18px',fontStyle:'bold',color:'#fff3d5'}).setOrigin(1,0.5)
@@ -27,42 +26,18 @@ class CocoaScene extends Phaser.Scene{
     for(let i=0;i<22;i++){let x=20+Math.random()*(this.width-40),y=110+Math.random()*220;this.add.circle(x,y,2,0x99603e,.18)}
     this.status=this.add.text(this.width/2,this.height-78,'開始前先看清楚三種可可豆的樣子',{fontFamily:'system-ui, sans-serif',fontSize:'15px',fontStyle:'bold',color:'#75442e',align:'center'}).setOrigin(.5)
     this.button=this.add.rectangle(this.width/2,this.height-34,170,48,0x6a3424).setInteractive({useHandCursor:true});this.buttonText=this.add.text(this.width/2,this.height-34,'我準備好了',{fontFamily:'system-ui, sans-serif',fontSize:'17px',fontStyle:'bold',color:'#fff3dc'}).setOrigin(.5)
-    this.button.on('pointerdown',()=>this.startGame())
-    this.showBeanGuide()
+    this.button.on('pointerdown',()=>this.startGame());this.input.on('pointerdown',this.handleBeanPointer,this);this.showBeanGuide()
   }
-  drawBean(graphic,index){
-    const t=this.types[index];graphic.clear();graphic.fillStyle(t.base,1);graphic.fillEllipse(34,35,58,48);graphic.fillStyle(t.shine,1);graphic.fillEllipse(28,28,39,30);graphic.fillStyle(t.chip,1);graphic.fillEllipse(26,24,21,9);graphic.fillStyle(t.base,1);graphic.fillEllipse(34,37,5,30);graphic.fillCircle(18,39,3);graphic.fillCircle(48,31,3);graphic.fillCircle(38,48,3)
-  }
-  showBeanGuide(){
-    this.guide=[]
-    this.guide.push(this.add.text(this.width/2,122,'黑可可　牛奶可可　草莓可可',{fontFamily:'system-ui, sans-serif',fontSize:'16px',fontStyle:'bold',color:'#75442e'}).setOrigin(.5))
-    this.types.forEach((type,i)=>{const x=this.width*(i+1)/4,y=213;const icon=this.add.graphics();this.drawBean(icon,i);icon.setPosition(x-34,y-34);this.guide.push(icon);this.guide.push(this.add.text(x,265,type.name,{fontFamily:'system-ui, sans-serif',fontSize:'14px',fontStyle:'bold',color:'#75442e'}).setOrigin(.5))})
-  }
+  drawBean(graphic,index){const t=this.types[index];graphic.clear();graphic.fillStyle(t.base,1);graphic.fillEllipse(34,35,58,48);graphic.fillStyle(t.shine,1);graphic.fillEllipse(28,28,39,30);graphic.fillStyle(t.chip,1);graphic.fillEllipse(26,24,21,9);graphic.fillStyle(t.base,1);graphic.fillEllipse(34,37,5,30);graphic.fillCircle(18,39,3);graphic.fillCircle(48,31,3);graphic.fillCircle(38,48,3)}
+  showBeanGuide(){this.guide=[];this.guide.push(this.add.text(this.width/2,122,'黑可可　牛奶可可　草莓可可',{fontFamily:'system-ui, sans-serif',fontSize:'16px',fontStyle:'bold',color:'#75442e'}).setOrigin(.5));this.types.forEach((type,i)=>{const x=this.width*(i+1)/4,y=213,icon=this.add.graphics();this.drawBean(icon,i);icon.setPosition(x-34,y-34);this.guide.push(icon);this.guide.push(this.add.text(x,265,type.name,{fontFamily:'system-ui, sans-serif',fontSize:'14px',fontStyle:'bold',color:'#75442e'}).setOrigin(.5))})}
   chooseTarget(){this.targetIndex=Phaser.Math.Between(0,this.types.length-1);this.targetText.setText('目標：'+this.types[this.targetIndex].name)}
-  spawnBean(){
-    if(!this.active)return
-    this.beans=this.beans.filter(bean=>bean.active)
-    if(this.beans.length>=9){const oldest=this.beans.shift();if(oldest&&oldest.active)oldest.destroy()}
-    const index=Phaser.Math.Between(0,this.types.length-1),x=46+Math.random()*(this.width-92),y=124+Math.random()*178
-    const bean=this.add.container(x,y).setDepth(3).setSize(62,62)
-    const graphic=this.add.graphics();this.drawBean(graphic,index);bean.add(graphic);bean.beanType=index;bean.setInteractive(new Phaser.Geom.Circle(34,34,32),Phaser.Geom.Circle.Contains)
-    bean.on('pointerdown',()=>this.collectBean(bean))
-    this.beans.push(bean);bean.setScale(.55);this.tweens.add({targets:bean,scale:1,duration:150,ease:'Back.Out'});this.tweens.add({targets:bean,y:y-5,duration:360,yoyo:true,repeat:-1,ease:'Sine.InOut'});this.time.delayedCall(2800,()=>{if(bean.active){this.beans=this.beans.filter(item=>item!==bean);bean.destroy()}})
-  }
-  collectBean(bean){
-    if(!this.active||!bean.active)return
-    const type=this.types[bean.beanType],correct=bean.beanType===this.targetIndex
-    this.beans=this.beans.filter(item=>item!==bean);bean.destroy()
-    if(correct){this.score++;this.scoreText.setText('得分  '+this.score);this.status.setText('答對了！收下 '+type.name+' 可可豆');this.status.setColor('#537a45');this.chooseTarget()}
-    else{this.status.setText('這是'+type.name+'，再找找目標豆');this.status.setColor('#a34c44')}
-    this.spawnBean()
-  }
-  startGame(){
-    this.guide.forEach(item=>item.destroy());this.guide=[];this.score=0;this.seconds=15;this.active=true;this.scoreText.setText('得分  0');this.timeText.setText('⏱ 15');this.status.setText('點對目標可可豆才能得分');this.status.setColor('#75442e');this.buttonText.setText('挑戰中');this.button.disableInteractive();this.chooseTarget();for(let i=0;i<5;i++)this.spawnBean();this.spawnTimer=this.time.addEvent({delay:450,loop:true,callback:()=>this.spawnBean()});this.clock=this.time.addEvent({delay:1000,repeat:14,callback:()=>{this.seconds--;this.timeText.setText('⏱ '+this.seconds);if(this.seconds<=0)this.finish()}})
-  }
+  spawnBean(){if(!this.active)return;this.beans=this.beans.filter(bean=>bean.active);if(this.beans.length>=9){const oldest=this.beans.shift();if(oldest&&oldest.active)oldest.destroy()}const index=Phaser.Math.Between(0,this.types.length-1),x=46+Math.random()*(this.width-92),y=124+Math.random()*178;const bean=this.add.graphics().setPosition(x-34,y-34).setSize(68,68).setDepth(3);bean.beanType=index;this.drawBean(bean,index);this.beans.push(bean);bean.setScale(.55);this.tweens.add({targets:bean,scale:1,duration:150,ease:'Back.Out'});this.tweens.add({targets:bean,y:y-39,duration:360,yoyo:true,repeat:-1,ease:'Sine.InOut'});this.time.delayedCall(2800,()=>{if(bean.active){this.beans=this.beans.filter(item=>item!==bean);bean.destroy()}})}
+  handleBeanPointer(pointer){if(!this.active)return;for(let i=this.beans.length-1;i>=0;i--){const bean=this.beans[i];if(bean.active&&Phaser.Geom.Rectangle.Contains(bean.getBounds(),pointer.worldX,pointer.worldY)){this.collectBean(bean);return}}}
+  collectBean(bean){if(!this.active||!bean.active)return;const type=this.types[bean.beanType],correct=bean.beanType===this.targetIndex;this.beans=this.beans.filter(item=>item!==bean);bean.destroy();if(correct){this.score++;this.scoreText.setText('得分  '+this.score);this.status.setText('答對了！收下 '+type.name+' 可可豆');this.status.setColor('#537a45');this.chooseTarget()}else{this.status.setText('這是'+type.name+'，再找找目標豆');this.status.setColor('#a34c44')}this.spawnBean()}
+  startGame(){this.guide.forEach(item=>item.destroy());this.guide=[];this.score=0;this.seconds=15;this.active=true;this.scoreText.setText('得分  0');this.timeText.setText('⏱ 15');this.status.setText('點對目標可可豆才能得分');this.status.setColor('#75442e');this.buttonText.setText('挑戰中');this.button.disableInteractive();this.chooseTarget();for(let i=0;i<5;i++)this.spawnBean();this.spawnTimer=this.time.addEvent({delay:450,loop:true,callback:()=>this.spawnBean()});this.clock=this.time.addEvent({delay:1000,repeat:14,callback:()=>{this.seconds--;this.timeText.setText('⏱ '+this.seconds);if(this.seconds<=0)this.finish()}})}
   finish(){this.active=false;this.spawnTimer.remove();this.beans.forEach(bean=>bean.destroy());this.beans=[];this.button.setInteractive({useHandCursor:true});this.buttonText.setText('再玩一回');this.status.setText('時間到！你答對收集 '+this.score+' 顆可可豆');this.status.setColor('#75442e')}
 }
 new Phaser.Game({type:Phaser.AUTO,parent:'game',width:600,height:480,backgroundColor:'#fff9ee',scale:{mode:Phaser.Scale.FIT,autoCenter:Phaser.Scale.CENTER_BOTH},scene:CocoaScene})
-</script>
-</body>
-</html>
+new Phaser.Game({type:Phaser.AUTO,parent:'game',width:600,height:480,backgroundColor:'#fff9ee',scale:{mode:Phaser.Scale.FIT,autoCenter:Phaser.Scale.CENTER_BOTH},scene:CocoaScene})
+new Phaser.Game({type:Phaser.AUTO,parent:'game',width:600,height:480,backgroundColor:'#fff9ee',scale:{mode:Phaser.Scale.FIT,autoCenter:Phaser.Scale.CENTER_BOTH},scene:CocoaScene})
+new Phaser.Game({type:Phaser.AUTO,parent:'game',width:600,height:480,backgroundColor:'#fff9ee',scale:{mode:Phaser.Scale.FIT,autoCenter:Phaser.Scale.CENTER_BOTH},scene:CocoaScene})
