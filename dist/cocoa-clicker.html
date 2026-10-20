@@ -38,3 +38,7 @@ class CocoaScene extends Phaser.Scene{
   finish(){this.active=false;this.spawnTimer.remove();this.beans.forEach(bean=>bean.destroy());this.beans=[];this.button.setInteractive({useHandCursor:true});this.buttonText.setText('再玩一回');this.status.setText('時間到！你答對收集 '+this.score+' 顆可可豆');this.status.setColor('#75442e')}
 }
 new Phaser.Game({type:Phaser.AUTO,parent:'game',width:600,height:480,backgroundColor:'#fff9ee',scale:{mode:Phaser.Scale.FIT,autoCenter:Phaser.Scale.CENTER_BOTH},scene:CocoaScene})
+
+</script>
+</body>
+</html>
