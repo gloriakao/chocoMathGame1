@@ -24,6 +24,7 @@ class CocoaScene extends Phaser.Scene{
     this.targetText=this.add.text(this.width/2,62,'辨識三種可可豆',{fontFamily:'system-ui, sans-serif',fontSize:'16px',fontStyle:'bold',color:'#ffe39a',align:'center'}).setOrigin(.5)
     this.add.rectangle(this.width/2,220,this.width-24,248,0xf5dcae).setStrokeStyle(2,0xe4bc86)
     for(let i=0;i<22;i++){let x=20+Math.random()*(this.width-40),y=110+Math.random()*220;this.add.circle(x,y,2,0x99603e,.18)}
+    this.beanSlots=[];for(const y of [143,220,297])for(const x of [90,230,370,510])this.beanSlots.push({x,y})
     this.status=this.add.text(this.width/2,this.height-78,'開始前先看清楚三種可可豆的樣子',{fontFamily:'system-ui, sans-serif',fontSize:'15px',fontStyle:'bold',color:'#75442e',align:'center'}).setOrigin(.5)
     this.button=this.add.rectangle(this.width/2,this.height-34,170,48,0x6a3424).setInteractive({useHandCursor:true});this.buttonText=this.add.text(this.width/2,this.height-34,'我準備好了',{fontFamily:'system-ui, sans-serif',fontSize:'17px',fontStyle:'bold',color:'#fff3dc'}).setOrigin(.5)
     this.button.on('pointerdown',()=>this.startGame());this.showBeanGuide()
@@ -33,14 +34,14 @@ class CocoaScene extends Phaser.Scene{
   chooseTarget(){this.targetIndex=Phaser.Math.Between(0,this.types.length-1);this.targetText.setText('目標：'+this.types[this.targetIndex].name)}
   removeBean(bean){this.beans=this.beans.filter(item=>item!==bean);if(bean.graphic.active)bean.graphic.destroy();if(bean.hit.active)bean.hit.destroy()}
   spawnBean(){
-    if(!this.active)return
-    if(this.beans.length>=10)this.removeBean(this.beans[0])
-    const index=Phaser.Math.Between(0,this.types.length-1),x=48+Math.random()*(this.width-96),y=126+Math.random()*174
+    if(!this.active||this.beans.length>=10)return
+    const free=this.beanSlots.filter(slot=>this.beans.every(bean=>Math.hypot(bean.hit.x-slot.x,bean.hit.y-slot.y)>78));if(!free.length)return
+    const slot=Phaser.Utils.Array.GetRandom(free),index=Phaser.Math.Between(0,this.types.length-1),x=slot.x,y=slot.y
     const graphic=this.add.graphics().setPosition(x-34,y-34).setDepth(3);this.drawBean(graphic,index)
-    const hit=this.add.zone(x,y,84,84).setDepth(4).setInteractive({useHandCursor:true})
+    const hit=this.add.zone(x,y,74,74).setDepth(4).setInteractive({useHandCursor:true})
     const bean={graphic,hit,type:index};this.beans.push(bean);hit.on('pointerdown',()=>this.collectBean(bean))
-    graphic.setScale(.7);this.tweens.add({targets:graphic,scale:1,duration:120,ease:'Back.Out'});this.tweens.add({targets:[graphic,hit],y:'-=5',duration:360,yoyo:true,repeat:-1,ease:'Sine.InOut'})
-    this.time.delayedCall(6500,()=>{if(graphic.active)this.removeBean(bean)})
+    graphic.setScale(.7);this.tweens.add({targets:graphic,scale:1,duration:120,ease:'Back.Out'});this.tweens.add({targets:[graphic,hit],y:'-=4',duration:450,yoyo:true,repeat:-1,ease:'Sine.InOut'})
+    this.time.delayedCall(8000,()=>{if(graphic.active)this.removeBean(bean)})
   }
   collectBean(bean){
     if(!this.active||!bean.graphic.active)return
@@ -50,7 +51,7 @@ class CocoaScene extends Phaser.Scene{
     this.spawnBean()
   }
   startGame(){
-    this.guide.forEach(item=>item.destroy());this.guide=[];this.score=0;this.seconds=15;this.active=true;this.scoreText.setText('得分  0');this.timeText.setText('⏱ 15');this.status.setText('點對目標可可豆才能得分');this.status.setColor('#75442e');this.buttonText.setText('挑戰中');this.button.disableInteractive();this.chooseTarget();for(let i=0;i<5;i++)this.spawnBean();this.spawnTimer=this.time.addEvent({delay:450,loop:true,callback:()=>this.spawnBean()});this.clock=this.time.addEvent({delay:1000,repeat:14,callback:()=>{this.seconds--;this.timeText.setText('⏱ '+this.seconds);if(this.seconds<=0)this.finish()}})
+    this.guide.forEach(item=>item.destroy());this.guide=[];this.score=0;this.seconds=15;this.active=true;this.scoreText.setText('得分  0');this.timeText.setText('⏱ 15');this.status.setText('點對目標可可豆才能得分');this.status.setColor('#75442e');this.buttonText.setText('挑戰中');this.button.disableInteractive();this.chooseTarget();for(let i=0;i<5;i++)this.spawnBean();this.spawnTimer=this.time.addEvent({delay:650,loop:true,callback:()=>this.spawnBean()});this.clock=this.time.addEvent({delay:1000,repeat:14,callback:()=>{this.seconds--;this.timeText.setText('⏱ '+this.seconds);if(this.seconds<=0)this.finish()}})
   }
   finish(){this.active=false;this.spawnTimer.remove();this.beans.slice().forEach(bean=>this.removeBean(bean));this.beans=[];this.button.setInteractive({useHandCursor:true});this.buttonText.setText('再玩一回');this.status.setText('時間到！你答對收集 '+this.score+' 顆可可豆');this.status.setColor('#75442e')}
 }
